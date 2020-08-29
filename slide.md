@@ -247,8 +247,8 @@ h1 {
 ## KotlinとScalaは共存できない
 Kotlin and Scala cannot coexist in the same project
 
- - どちらかの言語を先にコンパイルしないとバイトコードを読みに行けない
-   Either the language has to be compiled first so that one language can read other's byte code
+ - コンパイル順に依存関係があり、Java + Kotlin + Scalaを同時にコンパイルできない
+   There is an internal dependency in the compilation. We cannot compile Java + Kotlin + Scala at the same time
 
 ## KotlinとScalaの文法はとても似ている
 Kotlin and Scala are very similar in syntax
@@ -298,13 +298,15 @@ someCollection.forEach {
 # The Strategy
 
  - ソースファイル間での依存がかなり複雑で、サブプロジェクトにScalaを切り出して行くのはかなり困難であった
-   Dependencies between the source files were complex. Factoring out scala to subproject was very difficult, if not infeasible.
+   Dependencies between the source files were complex. Factoring out scala to a subproject was very difficult, if not infeasible.
 
 #
 
  - 一括でやるしかなさそう
    It seemed like doing everything in one shot was the only option
 
+   - ネタバレをすると、14日間一度もコンパイルは通らなかった
+     Spoiler alert: In fact, the source could not be compiled for 14 days
 ---
 
 # So ...
@@ -322,6 +324,10 @@ Right before this commit was an attempt to migrating incrementally; I soon surmi
 
 ---
 
+# The easy part
+
+---
+
 # The easy part - syntactic replacement
 
  - Scalaコードに自明に対応するKotlinコードはプロジェクトに全体置換を書ければ済む
@@ -330,7 +336,7 @@ Right before this commit was an attempt to migrating incrementally; I soon surmi
 
 #
 
- - とはいっても別言語。この置換は単純なものが多いとはいえ慎重に正規表現を組む必要がある。
+ - とはいっても別言語。この置換は単純なものが多いとはいえ慎重に正規表現を組む必要はある。
    Kotlin and Scala are two different languages. We need to carefully design regexp to perform project-wide replacement!
 
 ---
@@ -429,7 +435,7 @@ and other minor syntactic replacements
  # 
 
  - 最初はシグネチャを変えて回っていたが、むしろエラーが増えて見通しが悪くなりそうということで `@SuspendingMethod` アノテーションを作り、 `suspend def -> \@SuspendingMethod def` と置換した
-   At the beginning I was changing the signatures to take the extra parameters. This turns out to just increase errors, so I decided to fabricate a `@SuspendingMethod` annotation and applied `suspend def -> \@SuspendingMethod def`.
+   At the beginning I was changing the signatures to take the extra parameter. This turns out to just increase errors, so I decided to fabricate a `@SuspendingMethod` annotation and applied `suspend def -> \@SuspendingMethod def`.
 
 ---
 
@@ -538,13 +544,13 @@ Maybe a compiler plugin could help here? I don't really know...
 
 文法上は「本当にJavaのクラスのプロパティに直接代入している」のか、Kotlinにより生成されたプロパティへの代入なのか区別がつかない
 
-Syntactically, the real, direct assignment to a field is indistinguishable from an assignment to Kotlin-generated property based on a setter
+Syntactically, direct assignment to a field is indistinguishable from an assignment to Kotlin-generated property based on a setter
 
 #
 
-Getterに関しても同じ (Scalaでの `.getPlayer` は `.player` に見える)
+Getterに関しても同じ (Scalaでの `.getPlayer` はKotlinでは `.player` に見える)
 
-The same goes for getters; `.getPlayer` in Scala is identical to `.player` in Kotlin.
+The same goes for getters; `.player` in Kotlin looks like `.getPlayer` in Scala.
 
 ---
 
@@ -585,11 +591,11 @@ So what to do for nontrivial property accesses? There are hundreds or thousands 
 
 # Java-site getter/setter - The remaining part
 
-多分時間の6から7割はどうしてもここに吸われる。技術的に自動置換は不可能ではないけれど、それを実装するくらいだったら**力尽くでやったほうが早い**…という判断をした。多分正しい。
+多分時間の6から7割はどうしてもここに吸われる。技術的に自動置換は不可能ではないけれど、それを実装するくらいだったら**力尽くでやったほうが早い**…という判断をした。多分正しかった。
 
 #
 
-Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement an automatic translation... but my judge was that it is faster to do everything by force. I still think I was right.
+Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement an automatic translation... but my judge was that it is *faster to do everything by force*. I still think I was right.
 
 ---
 
