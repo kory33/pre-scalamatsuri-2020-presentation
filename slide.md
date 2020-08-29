@@ -8,9 +8,9 @@ section {
 }
 </style>
 
-# **1万7千行のKotlinを力尽くでScalaに移行した話**
+# **1万7千行のKotlinを2週間かけ力尽くでScalaに移行した話**
 
-## How I migrated 17k Kotlin lines to Scala by force
+## How I migrated 17k Kotlin lines to Scala in a fortnight by force
 
 by kory33 (@Kory__3)
 
@@ -48,6 +48,8 @@ All slide titles will be in English. Main texts will be in Japanese, accompanied
  - 日本で最も大きな公開Minecraftサーバーの一つ
    One of the largest public Minecraft servers in Japan
 
+#
+
  - Minecraftを拡張し、プレーヤーが**大量に**ブロックを破壊できるように
    The game is tweaked; players can break **a lot** of blocks
 
@@ -80,6 +82,8 @@ All slide titles will be in English. Main texts will be in Japanese, accompanied
 
  - システムはどんどん複雑化し、バグが混入しても容易にfixできなくなった
    The growing system had become too complex; bugfix was very difficult
+
+#
 
  - 機能開発をほぼ止めてリファクタリング/再実装に注力しようという話になったのが2018年初頭
    The beginning of 2018 was when the team decided to concentrate on refactoring / reimplementation rather than adding new features
@@ -145,6 +149,8 @@ suspend fun doWorld() {
 
  `suspend function` は評価機(`CoroutineContext`)を切り替えられるため、モナディックプログラミングまで自然に応用できる
  
+ #
+
  The interpreter of `suspend` uses `CoroutineContext`, which is not bound to the language, so `suspend`'s usage naturally extends to monadic programming
 
 ---
@@ -183,6 +189,8 @@ val result =
 
      [Qiita - Java で higher kinded polymorphism を実現する](https://qiita.com/lyrical_logical/items/2d68d378a97ea0da88c0)
 
+#
+
  - 文法上は書きやすいかもしれないが定義側にマクロが多いように見えた
    Maybe Kotlin + Λrrow is easy to read, but seemed to involve a lot of macros and metaprogramming on declaration site
 
@@ -192,6 +200,8 @@ val result =
 
  - 他開発者に対する学習コストがどれほどかがあまり見えなかった
    Learning cost of the framework for other developers was unknown to me
+
+#
 
  - 仕組みを質問され完全に答えられる程度になるのに自分も時間が掛かりそう
    I thought it'd take a lot for me to be able to understand the internals
@@ -212,7 +222,7 @@ Maybe it is not too late to move everything to Scala
 
 ---
 
-# How much Kotlin do we Have?
+# How much Kotlin do we have?
 
 `find . -name '*.kt' | xargs wc -l` 
 
@@ -290,6 +300,8 @@ someCollection.forEach {
  - ソースファイル間での依存がかなり複雑で、サブプロジェクトにScalaを切り出して行くのはかなり困難であった
    Dependencies between the source files were complex. Factoring out scala to subproject was very difficult, if not infeasible.
 
+#
+
  - 一括でやるしかなさそう
    It seemed like doing everything in one shot was the only option
 
@@ -308,3 +320,286 @@ someCollection.forEach {
 (実はこのコミット前に少しだけScalaへ移す試みをしていますが、そこでインクリメンタルな移行が不可能だと悟っています
 Right before this commit was an attempt to migrating incrementally; I soon surmised this was impossible)
 
+---
+
+# The easy part - syntactic replacement
+
+ - Scalaコードに自明に対応するKotlinコードはプロジェクトに全体置換を書ければ済む
+   Kotlin code that has trivial Scala counterpart can be replaced in the whole project
+   - `R-Click /src -> Replace in Path` on IDEA
+
+#
+
+ - とはいっても別言語。この置換は単純なものが多いとはいえ慎重に正規表現を組む必要がある。
+   Kotlin and Scala are two different languages. We need to carefully design regexp to perform project-wide replacement!
+
+---
+
+# The easy part - syntactic replacement
+
+## Generics ([`8d178516`](https://github.com/GiganticMinecraft/SeichiAssist/commit/8d178516))
+
+```Regexp
+<([^<>,:]*)(?<!-)>               to  \[$1\]
+<([^<>,:]*), ?([^<>,:]*)(?<!-)>  to  \[$1, $2\]
+<([^<>,:]*) ?: ? ([^<>,:]*)>     to  \[$1 <: $2\]
+->                               to  =>
+```
+
+```diff
+- reverseAccumulator: List<Any> = listOf()): Option<Pair<List<Any>, List<String>>> {
++ reverseAccumulator: List[Any] = listOf()): Option[Pair[List[Any], List[String]]] {
+```
+
+```diff
+-private tailrec suspend def <CS : CommandSender>
+-    parse(parsers: List<(String) -> ResponseEffectOrResult<CS, Any>>,
++private tailrec suspend def [CS <: CommandSender]
++    parse(parsers: List[(String) => ResponseEffectOrResult[CS, Any]],
+```
+
+---
+
+# The easy part - syntactic replacement
+
+## String interpolations ([`07f6f437`](https://github.com/GiganticMinecraft/SeichiAssist/commit/07f6f437))
+
+```Regexp
+(?<!s)(\".*\$.*\")   to   s$1
+```
+
+```diff
+-        .title("$YELLOW$UNDERLINE${BOLD}元のページへ")
+-        .lore("$RESET$DARK_RED${UNDERLINE}クリックで移動")
++        .title(s"$YELLOW$UNDERLINE${BOLD}元のページへ")
++        .lore(s"$RESET$DARK_RED${UNDERLINE}クリックで移動")
+```
+
+---
+
+# The easy part - syntactic replacement
+
+## Class `extends` ([`7a1e1175`](https://github.com/GiganticMinecraft/SeichiAssist/commit/7a1e1175))
+
+```Regexp
+class ([A-Za-z]+(\[.*\])?(\s*(protected|private)\s*)?(\(.*\))?\s*)\:(\s*?\S+)
+to
+class $1 extends $6
+```
+
+```diff
+-class BungeeReceiver(private val plugin: SeichiAssist) : PluginMessageListener {
++class BungeeReceiver(private val plugin: SeichiAssist)  extends  PluginMessageListener {
+```
+
+(スペースが余分に入っているがlintで後で消すのでこういうのは無視
+Extra spaces around `extends` will be eventually eliminated by the linter)
+
+---
+
+# The easy part - syntactic replacement
+
+## Other conversions
+
+```Regexp
+listOf                    to  List                   (list constructor)
+def (\[[^\]]*\]) ([^\(]*) to  def $2$1        (generic function definition)
+object (\S+)\s*:\s*(\S+)  to  object $1 extends $2    (object extends)
+\)\: ([A-Z]\S+) \{        to  \)\: $1 = \{  (Scala's method is a single expression)
+([A-Za-z)])!!             to  $1                  (ignore assert-non-null)
+as ([A-Z]\w+)             to  \.asInstanceOf\[$1\]      (downcasts)
+typealias                 to  type                     (type aliases)
+```
+
+その他小さな全体置換
+
+and other minor syntactic replacements
+
+---
+
+# The harder part
+
+---
+
+# The harder part - `suspend`
+
+ - Kotlinの `suspend fun ...(): R` は実は `Continuation[R]` を取る普通の関数
+   Kotlin's `suspend fun ...(): R` is actually an ordinary function that takes `Continuation[R]` as an extra argument
+ 
+ # 
+
+ - 最初はシグネチャを変えて回っていたが、むしろエラーが増えて見通しが悪くなりそうということで `@SuspendingMethod` アノテーションを作り、 `suspend def -> \@SuspendingMethod def` と置換した
+   At the beginning I was changing the signatures to take the extra parameters. This turns out to just increase errors, so I decided to fabricate a `@SuspendingMethod` annotation and applied `suspend def -> \@SuspendingMethod def`.
+
+---
+
+# The harder part - Scoped functions and Extension functions
+
+```Kotlin
+fun scopedFunction(f: ExistingType.() -> Unit): Unit { ... } // scoped function
+
+fun ExistingType.extfun(): Int { ... } // extfun
+```
+
+ - `implicit class` を使った enrich-my-library パターンで解決
+   Can be resolved using enrich-my-library pattern through `implicit class`es
+
+---
+
+# The harder part - Nullability
+
+Kotlinは `null` に関する操作が充実している
+Kotlin has convenient operations to manipulate `null`s
+
+```Kotlin
+val nullableProperty: Int? = nullableValue?.property // safe calls
+```
+
+```Kotlin
+val result = nullableExpression ?: return -1 // elvis operator
+```
+
+---
+
+# The harder part - Nullability
+
+`Option`に包み、elvis演算子は汎用的な `implicit class` を用意することで解決する
+Wrapping nullables in `Option` is a way. Having generic `implicit class` eliminates needs for `?:`
+
+```Scala
+object Nullability {
+  implicit class NullabilityExtensionReceiver[T](val receiver: T) extends AnyVal {
+    def ifNull(f: => T): T = if (receiver == null) f else receiver
+  }
+}
+```
+```Scala
+import {...}.Nullability._
+
+val result = nullableExpression.ifNull { return -1 }
+```
+
+---
+
+# The most difficult part
+
+---
+
+# The most difficult part - Java-site getter/setter
+
+---
+
+# The most difficult part - Java-site getter/setter
+
+KotlinはJava側で定義された `E.getSomething` と `E.setSomething` といった**メソッド**を`E.something` や `E.something = ...` とアクセスできる**プロパティ**にラップする機能がある
+
+Kotlin has a feature to wrap `get`ters and `set`ters defined in Java class as *properties*.
+
+```Java
+public final class SomeClass {
+    private int field = 1;
+    public SomeClass() { ... }
+
+    public int getField() { return field; }
+    public void setField(int newValue) { field = newValue }
+}
+```
+
+```Kotlin
+someClassValue.field = someClassValue.field + 1
+```
+
+---
+
+# The most difficult part - Java-site getter/setter
+
+この機能はKotlinからJavaを触る際には便利で、使用感も良い。SeichiAssistではそこそこの量のコードがこの機能を使用していた。
+
+This feature feels very ergonomic when interacting with Java class from Kotlin. SeichiAssist had been extensively utilizing this getter/setter-to-property conversion.
+
+---
+
+<style scoped>
+h2 {
+  margin: auto;
+}
+</style>
+
+# 
+
+## Scala did not have this feature!
+
+コンパイラプラグインを書けばあるいは…？(本当に？)
+Maybe a compiler plugin could help here? I don't really know...
+
+---
+
+# The most difficult part - Java-site getter/setter
+
+文法上は「本当にJavaのクラスのプロパティに直接代入している」のか、Kotlinにより生成されたプロパティへの代入なのか区別がつかない
+
+Syntactically, the real, direct assignment to a field is indistinguishable from an assignment to Kotlin-generated property based on a setter
+
+#
+
+Getterに関しても同じ (Scalaでの `.getPlayer` は `.player` に見える)
+
+The same goes for getters; `.getPlayer` in Scala is identical to `.player` in Kotlin.
+
+---
+
+# Java-site getter/setter - What I did
+
+プロジェクト内で「殆どの場合 getter を呼んでいるプロパティアクセス」を見分けることができる。例えば `.onlinePlayers` はプロパティとして**定義していなかった**から、直後に` =`が来ていない時点でこれがすぐにgetter呼び出しだとわかる
+
+It is often possible to affirm that a certain property calls are *definitely* getter calls. For example, `.onlinePlayers` was *never defined* as a property. No ` =` implies this is a getter access!
+
+### Now we can employ the POWER of RegExp
+  
+```RegExp
+.onlinePlayers(?<! ?=)      to  .getOnlinePlayers
+.onlinePlayers(?<= ?=)(.*)  to  .setOnlinePlayers($1)
+```
+
+---
+
+# Java-site getter/setter - The remaining part
+
+では見分けられなさそうな非自明なプロパティアクセスは？そもそもプロパティアクセスは数百数千とかそういう種類あるけど？
+
+So what to do for nontrivial property accesses? There are hundreds or thousands of such property accesses!
+
+---
+
+# Java-site getter/setter - The remaining part
+
+#
+
+## 👉がんばる。
+
+#
+
+## 👉Try hard.
+
+---
+
+# Java-site getter/setter - The remaining part
+
+多分時間の6から7割はどうしてもここに吸われる。技術的に自動置換は不可能ではないけれど、それを実装するくらいだったら**力尽くでやったほうが早い**…という判断をした。多分正しい。
+
+#
+
+Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement an automatic translation... but my judge was that it is faster to do everything by force. I still think I was right.
+
+---
+
+# Conclusion
+
+ - 構文論的に変換できる部分は比較的簡単
+   Syntactic conversion is rather easy
+
+ - 構文が対応しない所はターゲット言語の機能を使えばイイ感じになる場合がある
+   When the syntactic concepts don't agree, using some feature in the target language may resolve the translation issue
+
+ - 元言語の一つの構文がターゲット言語で二つの機能に分かれる場合滅茶苦茶つらい
+   When an unified syntax in the original language corresponds to two different syntaxes in the target language, that is going to be a big problem
