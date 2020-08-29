@@ -8,11 +8,19 @@ section {
 }
 </style>
 
-# **1万行のKotlinをScalaに移行した話**
+# **16k行のKotlinを力尽くでScalaに移行した話**
 
-## How I migrated 10k Kotlin lines to Scala
+## How I migrated 16k Kotlin lines to Scala by force
 
 by kory33 (@Kory__3)
+
+---
+
+# Note
+
+全てのスライドで、タイトルは英語、本文は日英併記という形式を取ります。
+
+All slide titles will be in English. Main texts will be in Japanese, accompanied by English translations and sidenotes if needed.
 
 ---
 
@@ -163,4 +171,128 @@ val result =
 
 ---
 
+<!-- ここまで大体5分 -->
+
 # But wait...
+
+ - KotlinにはHigher Kinded Typeは無い
+   Kotlin does not have Higher Kinded Type
+
+   - Λrrowは Type Indexed Value 辺りの手法でHKTをエミュレートしている
+     Λrrow therefore emulates HKT using Type Indexed Value etc.
+
+     [Qiita - Java で higher kinded polymorphism を実現する](https://qiita.com/lyrical_logical/items/2d68d378a97ea0da88c0)
+
+ - 文法上は書きやすいかもしれないが定義側にマクロが多いように見えた
+   Maybe Kotlin + Λrrow is easy to read, but seemed to involve a lot of macros and metaprogramming on declaration site
+
+---
+
+# But wait...
+
+ - 他開発者に対する学習コストがどれほどかがあまり見えなかった
+   Learning cost of the framework for other developers was unknown to me
+
+ - 仕組みを質問され完全に答えられる程度になるのに自分も時間が掛かりそう
+   I thought it'd take a lot for me to be able to understand the internals
+
+---
+
+# So ... Scala? (+ Cats?)
+
+まだKotlinの行数少ないし移行できるのでは？
+
+Maybe it is not too late to move everything to Scala
+
+---
+
+# How much Kotlin do we Have?
+
+`find . -name '*.kt' | xargs wc -l`
+
+---
+
+# How much Kotlin do we Have?
+
+`find . -name '*.kt' | xargs wc -l` 
+
+### .. 16652 lines!
+
+![wc-kt-before](./resources/wc-kt-before-enlarged.png)
+
+---
+
+<style scoped>
+h1 {
+  margin: auto;
+}
+</style>
+
+# 🤔🤔🤔
+
+---
+
+# The Strategy
+
+## KotlinとScalaは共存できない
+Kotlin and Scala cannot coexist in the same project
+
+ - どちらかの言語を先にコンパイルしないとバイトコードを読みに行けない
+   Either the language has to be compiled first so that one language can read other's byte code
+
+## KotlinとScalaの文法はとても似ている
+Kotlin and Scala are very similar in syntax
+
+---
+
+# The Strategy - similar syntax
+
+Scala
+```Scala
+def someIntFunction(): Int = {
+    println("aaa")
+    2
+}
+```
+
+Kotlin
+```Kotlin
+fun someIntFunction(): Int {
+    println("aaa")
+    return 2
+}
+```
+
+---
+
+# The Strategy - similar syntax 2
+
+Scala
+
+```Scala
+someCollection.foreach { elem =>
+    println(elem.property)
+}
+```
+
+Kotlin
+
+```Kotlin
+someCollection.forEach {
+    println(it.property) // 'it' references lambda parameter
+}
+```
+
+---
+
+# The Strategy
+
+ - ソースファイル間での依存がかなり複雑で、サブプロジェクトにScalaを切り出して行くのはかなり困難であった
+   Dependencies between the source files were complex. Factoring out scala to subproject was very difficult, if not infeasible.
+
+ - 一括でやるしかなさそう
+   It seemed like doing everything in one shot was the only option
+
+---
+
+
