@@ -8,9 +8,9 @@ section {
 }
 </style>
 
-# **16k行のKotlinを力尽くでScalaに移行した話**
+# **1万7千行のKotlinを力尽くでScalaに移行した話**
 
-## How I migrated 16k Kotlin lines to Scala by force
+## How I migrated 17k Kotlin lines to Scala by force
 
 by kory33 (@Kory__3)
 
@@ -216,7 +216,7 @@ Maybe it is not too late to move everything to Scala
 
 `find . -name '*.kt' | xargs wc -l` 
 
-### .. 16652 lines!
+### .. 17328 lines!
 
 ![wc-kt-before](./resources/wc-kt-before-enlarged.png)
 
@@ -295,4 +295,16 @@ someCollection.forEach {
 
 ---
 
+# So ...
+
+---
+
+# Into Fire
+
+138 Files Renamed ([`4ecf20b8`](https://github.com/GiganticMinecraft/SeichiAssist/commit/4ecf20b8))
+
+![replace commit](./resources/replace-commit-enlarged.png)
+
+(実はこのコミット前に少しだけScalaへ移す試みをしていますが、そこでインクリメンタルな移行が不可能だと悟っています
+Right before this commit was an attempt to migrating incrementally; I soon surmised this was impossible)
 
