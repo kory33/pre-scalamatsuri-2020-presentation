@@ -430,7 +430,7 @@ val result = nullableExpression ?: return -1 // elvis operator
 
 # The harder part - Nullability
 
-`Option`に包み、elvis演算子は汎用的な `implicit class` を用意することで解決する
+`Option`に包み、`:?`演算子は汎用的な `implicit class` を用意することで解決する
 Wrapping nullables in `Option` is a way. Having generic `implicit class` eliminates needs for `?:`
 
 ```Scala
@@ -517,7 +517,7 @@ The same goes for getters; `.player` in Kotlin looks like `.getPlayer` in Scala.
 
 # Java-site getter/setter - What I did
 
-プロジェクト内で「殆どの場合 getter を呼んでいるプロパティアクセス」を見分けることができる。例えば `.onlinePlayers` はプロパティとして**定義していなかった**から、直後に` =`が来ていない時点でこれがすぐにgetter呼び出しだとわかる
+プロジェクト内で「getter を呼んでいるプロパティアクセス」を見分けることができることがある。例えば `.onlinePlayers` はプロパティとして**定義していなかった**から、直後に` =`が来ていない時点でこれがすぐにgetter呼び出しだとわかる
 
 It is often possible to affirm that a certain property calls are *definitely* getter calls. For example, `.onlinePlayers` was *never defined* as a property. No ` =` implies this is a getter access!
 
