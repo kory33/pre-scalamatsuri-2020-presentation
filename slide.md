@@ -124,29 +124,6 @@ Library supporting purely functional and generic programming in Kotlin
 
 # suspend function
 
-```Kotlin
-// block the main thread until all launched coroutines are finished
-fun main() = runBlocking {
-    launch { doWorld() }
-    println("Hello,")
-}
-
-suspend fun doWorld() {
-    // delay is another suspend fun
-    // the execution "pauses" before this call
-    delay(1000L)
-
-    // the execution continues ...
-    println("World!")
-}
-```
-(adopted from Kotlin Programming Language, https://kotlinlang.org/docs/reference/coroutines/basics.html)
-
-
----
-
-# suspend function
-
  `suspend function` は評価機(`CoroutineContext`)を切り替えられるため、モナディックプログラミングまで自然に応用できる
  
  #
@@ -427,6 +404,49 @@ and other minor syntactic replacements
 
 ---
 
+# The harder part - `break`, `continue`
+
+---
+
+# The harder part - `break`, `continue`
+
+Scalaには`break` / `continue`という制御構文が無い
+
+Scala does not have `break` or `continue`
+
+#
+
+ - `scala.util.control.Breaks` !
+
+---
+
+# The harder part - `suspend`
+
+---
+
+# The harder part - `suspend`
+
+```Kotlin
+// block the main thread until all launched coroutines are finished
+fun main() = runBlocking {
+    launch { doWorld() }
+    println("Hello,")
+}
+
+suspend fun doWorld() {
+    // delay is another suspend fun
+    // the execution "pauses" before this call
+    delay(1000L)
+
+    // the execution continues ...
+    println("World!")
+}
+```
+(adopted from Kotlin Programming Language, https://kotlinlang.org/docs/reference/coroutines/basics.html)
+
+
+---
+
 # The harder part - `suspend`
 
  - Kotlinの `suspend fun ...(): R` は実は `Continuation[R]` を取る普通の関数
@@ -604,8 +624,8 @@ Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement
  - 構文論的に変換できる部分は比較的簡単
    Syntactic conversion is rather easy
 
- - 構文が対応しない所はターゲット言語の機能を使えばイイ感じになる場合がある
-   When the syntactic concepts don't agree, using some feature in the target language may resolve the translation issue
+ - 構文が対応しない所はターゲット言語の機能やアノテーションを使えばイイ感じになる場合がある
+   When the syntactic concepts don't agree, using some feature in the target language or annotation may resolve the translation issue
 
- - 元言語の一つの構文がターゲット言語で二つの機能に分かれる場合滅茶苦茶つらい
+ - 元言語の一つの構文がターゲット言語で二つの機能に分かれる場合つらい。頑張るしかない。
    When an unified syntax in the original language corresponds to two different syntaxes in the target language, that is going to be a big problem
