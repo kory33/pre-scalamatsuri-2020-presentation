@@ -576,3 +576,15 @@ Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement
 
  - 元言語の一つの構文がターゲット言語で二つの機能に分かれる場合つらい。頑張るしかない。
    When an unified syntax in the original language corresponds to two different syntaxes in the target language, that is going to be a big problem
+
+---
+
+# Links, Bibliographies and other Resources
+
+ - SeichiAssist - [https://github.com/GiganticMinecraft/SeichiAssist](https://github.com/GiganticMinecraft/SeichiAssist)
+ - Seichi Server - [https://www.seichi.network/](https://www.seichi.network/)
+ - Kotlin Programming Language - [https://kotlinlang.org/](https://kotlinlang.org/)
+
+ - Λrrow-kt - [https://arrow-kt.io/](https://arrow-kt.io/)
+
+ - Partial video recording of what I was doing - [(Youtube)](https://www.youtube.com/watch?v=t2FF3GuTs0w)
