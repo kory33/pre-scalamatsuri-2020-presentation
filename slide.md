@@ -114,65 +114,6 @@ We converted several `.java`s to `.kt`, formatting or cleaning them along the wa
 
 ---
 
-# Λrrow (https://arrow-kt.io/)
-
-Kotlinでの純粋関数型及びジェネリックプログラミングをサポートするライブラリ
-
-Library supporting purely functional and generic programming in Kotlin
-
----
-
-# suspend function
-
- `suspend function` は評価機(`CoroutineContext`)を切り替えられるため、モナディックプログラミングまで自然に応用できる
- 
- #
-
- The interpreter of `suspend` uses `CoroutineContext`, which is not bound to the language, so `suspend`'s usage naturally extends to monadic programming
-
----
-
-# Λrrow + suspend function
-
-```Kotlin
-val result = Option.fx {
-    val (one) = Option(1)
-    val (two) = Option(one + one)
-    two
-}
-```
-
-```Kotlin
-val result =
-    Either.fx<Throwable, Int> {
-        val (one) = Either.right(1)
-        val (two) = Either.right(one + one)
-        two
-    }
-```
-(from arrow-kt website, https://arrow-kt.io/docs/0.10/fx/polymorphism/)
-
----
-
-<!-- ここまで大体5分 -->
-
-# But wait...
-
- - KotlinにはHigher Kinded Typeは無い
-   Kotlin does not have Higher Kinded Type
-
-   - Λrrowは Type Indexed Value 辺りの手法でHKTをエミュレートしている
-     Λrrow therefore emulates HKT using Type Indexed Value etc.
-
-     [Qiita - Java で higher kinded polymorphism を実現する](https://qiita.com/lyrical_logical/items/2d68d378a97ea0da88c0)
-
-#
-
- - 文法上は書きやすいかもしれないが定義側にマクロが多いように見えた
-   Maybe Kotlin + Λrrow is easy to read, but seemed to involve a lot of macros and metaprogramming on declaration site
-
----
-
 # But wait...
 
  - 他開発者に対する学習コストがどれほどかがあまり見えなかった
@@ -180,8 +121,8 @@ val result =
 
 #
 
- - 仕組みを質問され完全に答えられる程度になるのに自分も時間が掛かりそう
-   I thought it'd take a lot for me to be able to understand the internals
+ - Kotlinでの純粋関数型プログラミングを手助けするライブラリがあるが、仕組みを質問され完全に答えられる程度になるのに自分も時間が掛かりそう
+   I thought it'd take a lot for me to be able to understand the internals of libraries supporting purely functional programming in Kotlin
 
 ---
 
