@@ -568,10 +568,10 @@ Nearly 60 or 70 percent of effort went here. It is *not impossible* to implement
 
 # Conclusion
 
- - 構文論的に変換できる部分は比較的簡単
-   Syntactic conversion is rather easy
+ - 構文論的に変換できる部分は正規表現を知っていれば比較的簡単
+   Knowing RegExp, syntactic conversion is rather easy
 
- - 構文が対応しない所はターゲット言語の機能やアノテーションを使えばイイ感じになる場合がある
+ - 構文が対応しない所は、ターゲット言語の機能やアノテーションを使えばイイ感じになる場合がある
    When the syntactic concepts don't agree, using some feature in the target language or annotation may resolve the translation issue
 
  - 元言語の一つの構文がターゲット言語で二つの機能に分かれる場合つらい。頑張るしかない。
