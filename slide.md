@@ -8,11 +8,17 @@ section {
 }
 </style>
 
+<style scoped>
+h3 {
+    margin: 60px auto;
+}
+</style>
+
 # **1万7千行のKotlinを2週間かけ力尽くでScalaに移行した話**
 
 ## How I migrated 17k Kotlin lines to Scala in a fortnight by force
 
-by kory33 (@Kory__3)
+### by kory33 (@Kory__3)　　　　　 \- at Pre-Scalamatsuri 2020
 
 ---
 
